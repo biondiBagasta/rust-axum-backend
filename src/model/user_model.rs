@@ -1,6 +1,12 @@
 use serde::{Deserialize, Serialize};
 use sqlx::types::time::OffsetDateTime;
 
+#[path = "./utils_model.rs"] mod utils_model;
+
+pub use utils_model::PaginationResponse;
+pub use utils_model::PaginationBody;
+
+
 #[derive(Serialize)]
 pub struct UserData {
 	pub id: i32,
@@ -15,6 +21,12 @@ pub struct UserData {
 	pub created_at: OffsetDateTime,
 	#[serde(with = "time::serde::rfc3339")]
 	pub updated_at: OffsetDateTime
+}
+
+#[derive(Serialize)]
+pub struct UserPaginate {
+	pub data: Vec<UserData>,
+	pub paginate: PaginationResponse
 }
 
 #[derive(Deserialize)]

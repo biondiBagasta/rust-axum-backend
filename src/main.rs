@@ -1,5 +1,5 @@
 use axum::{routing::{ delete, get, post, put }, Router};
-use controller::category_controller;
+use controller::{category_controller, user_controller};
 use sqlx::postgres::PgPoolOptions;
 use tokio::net::TcpListener;
 
@@ -29,10 +29,16 @@ async fn main() {
 
     let app_router = Router::new()
     .route("/", get(|| async { "Hello World" }))
+    /* Category Route */
     .route("/api/category", get(category_controller::find_many))
     .route("/api/category", post(category_controller::create))
     .route("/api/category/{id}", put(category_controller::update))
     .route("/api/category/{id}", delete(category_controller::delete))
+    /* User Route */
+    .route("/api/user/search-paginate", post(user_controller::search_paginate))
+    .route("/api/user", post(user_controller::create))
+    .route("/api/user/{id}", put(user_controller::update))
+    .route("/api/user/{id}", delete(user_controller::delete))
     .with_state(db_pool);
 
     axum::serve(listener, app_router).await.expect("Error while serving the server.");
