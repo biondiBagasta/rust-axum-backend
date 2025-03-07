@@ -1,13 +1,9 @@
 use serde::{Deserialize, Serialize};
 use sqlx::types::time::OffsetDateTime;
 
-#[path = "./utils_model.rs"] mod utils_model;
+use crate::model::utils_model::{ PaginationResponse };
 
-pub use utils_model::PaginationResponse;
-pub use utils_model::PaginationBody;
-
-
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct UserData {
 	pub id: i32,
 	pub username: String,
@@ -49,4 +45,10 @@ pub struct UserUpdateDto {
 	pub phone_number: Option<String>,
 	pub photo: Option<String>,
 	pub role: Option<String>
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct JwtClaims {
+	pub user_data: UserData,
+	pub exp: usize,
 }

@@ -1,12 +1,12 @@
 use axum::{routing::{ delete, get, post, put }, Router};
-use controller::{category_controller, user_controller};
 use sqlx::postgres::PgPoolOptions;
 use tokio::net::TcpListener;
 
-mod controller {
-    pub mod category_controller;
-    pub mod user_controller;
-}
+mod controller;
+mod model;
+mod utils;
+
+use controller::{category_controller, user_controller, auth_controller};
 
 #[tokio::main]
 async fn main() {
@@ -25,7 +25,7 @@ async fn main() {
     let listener = TcpListener::bind(server_address)
     .await.expect("Couldn't create TCP Listener.");
 
-    print!("Listening on {}", listener.local_addr().unwrap());
+    print!("Listening on {} ", listener.local_addr().unwrap());
 
     let app_router = Router::new()
     .route("/", get(|| async { "Hello World" }))
@@ -39,6 +39,10 @@ async fn main() {
     .route("/api/user", post(user_controller::create))
     .route("/api/user/{id}", put(user_controller::update))
     .route("/api/user/{id}", delete(user_controller::delete))
+    /* Auth Route */
+    .route("/api/auth/login", post(auth_controller::login))
+    .route("/api/auth/authenticated", post(auth_controller::authenticated))
+    .route("/api/auth/change-password", post(auth_controller::change_password))
     .with_state(db_pool);
 
     axum::serve(listener, app_router).await.expect("Error while serving the server.");

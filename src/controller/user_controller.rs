@@ -9,11 +9,12 @@ use serde_json::json;
 
 use bcrypt::{ DEFAULT_COST, hash, verify };
 
-#[path = "../model/user_model.rs"] mod user_model;
+use crate::model::user_model::{ UserCreateDto, UserUpdateDto, UserData, UserPaginate };
+use crate::model::utils_model::{ PaginationBody, PaginationResponse };
 
 pub async fn search_paginate(
 	State(pg_pool): State<PgPool>,
-	Json(body): Json<user_model::PaginationBody>
+	Json(body): Json<PaginationBody>
 ) -> Result<(StatusCode, String), (StatusCode, String)> {
 
 	const PAGE_TAKE: i64 = 10;
@@ -30,7 +31,7 @@ pub async fn search_paginate(
 	})?;
 
 	let query_search = sqlx::query_as!(
-		user_model::UserData,
+		UserData,
 		"SELECT * FROM user_system WHERE username ILIKE $1 OR full_name ILIKE $2
 		LIMIT($3) OFFSET($4)",
 		format!("%{}%", body.term),
@@ -46,9 +47,9 @@ pub async fn search_paginate(
 		)
 	})?;
 
-	let pagination_response = user_model::UserPaginate {
+	let pagination_response = UserPaginate {
 		data: query_search,
-		paginate: user_model::PaginationResponse {
+		paginate: PaginationResponse {
 			per_page: PAGE_TAKE,
 			total_page: ((query_count as f64 / PAGE_TAKE as f64) * 0.4).round() as i64,
 			count: query_count,
@@ -64,7 +65,7 @@ pub async fn search_paginate(
 
 pub async fn create(
 	State(pg_pool): State<PgPool>,
-	Json(body): Json<user_model::UserCreateDto>
+	Json(body): Json<UserCreateDto>
 ) -> Result<(StatusCode, String), (StatusCode, String)> {
 	
 	let hashed_password = hash(body.password, DEFAULT_COST).unwrap();
@@ -96,7 +97,7 @@ pub async fn create(
 pub async fn update(
 	State(pg_pool): State<PgPool>,
 	Path(id): Path<i32>,
-	Json(body): Json<user_model::UserUpdateDto>
+	Json(body): Json<UserUpdateDto>
 ) -> Result<(StatusCode, String), (StatusCode, String)> {
 
 	if body.password.is_none() {
@@ -126,7 +127,7 @@ pub async fn update(
 
 	} else {
 		let query_find_first = sqlx::query_as!(
-			user_model::UserData,
+			UserData,
 			"SELECT * FROM user_system WHERE id = $1 LIMIT 1",
 			id
 		).fetch_one(&pg_pool)
@@ -165,7 +166,7 @@ pub async fn update(
 				json!({ "success": true, "message": "Data User berhasil diperbaharui."}).to_string()
 			))
 		} else {
-					sqlx::query!(
+			sqlx::query!(
 			"UPDATE user_system SET username = $1, password = $8, full_name = $2, address = $3, phone_number = $4, role = $5, photo = $6 WHERE 
 				id = $7",
 				body.username,

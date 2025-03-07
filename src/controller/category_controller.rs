@@ -7,12 +7,12 @@ use axum::{
 use sqlx::postgres::PgPool;
 use serde_json::json;
 
-#[path = "../model/category_model.rs"] mod category_model;
+use crate::model::category_model::{ CategoryCreateBody, CategoryData, CategoryUpdateBody };
 
 
 pub async fn find_many(State(pg_pool): State<PgPool>) -> Result<(StatusCode, String), (StatusCode, String)> {
 	let query_find_many = sqlx::query_as!(
-		category_model::CategoryData, 
+		CategoryData, 
 		"SELECT * FROM category ORDER BY name ASC"
 	).fetch_all(&pg_pool)
 	.await
@@ -32,9 +32,9 @@ pub async fn find_many(State(pg_pool): State<PgPool>) -> Result<(StatusCode, Str
 
 pub async fn create(
     State(pg_pool): State<PgPool>,
-    Json(body): Json<category_model::CategoryCreateBody>
+    Json(body): Json<CategoryCreateBody>
 ) -> Result<(StatusCode, String), (StatusCode, String)> {
-    let query_insert = sqlx::query_as!(category_model::CategoryData, 
+    let query_insert = sqlx::query_as!(CategoryData, 
     	"INSERT INTO category (name) VALUES($1) RETURNING *",
         body.name,
     ).fetch_one(&pg_pool)
@@ -55,7 +55,7 @@ pub async fn create(
 pub async fn update(
 	State(pg_pool): State<PgPool>,
 	Path(id): Path<i32>,
-	Json(body): Json<category_model::CategoryUpdateBody>
+	Json(body): Json<CategoryUpdateBody>
 ) -> Result<(StatusCode, String), (StatusCode, String)> {
 	sqlx::query!(
 		"UPDATE category set name = $1 WHERE id = $2",
