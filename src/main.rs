@@ -1,12 +1,14 @@
-use axum::{routing::{ delete, get, post, put }, Router};
+use axum::{middleware, routing::{ delete, get, post, put }, Router};
 use sqlx::postgres::PgPoolOptions;
 use tokio::net::TcpListener;
+use tower_http::cors::{ Any, CorsLayer };
 
 mod controller;
 mod model;
 mod utils;
 
-use controller::{category_controller, user_controller, auth_controller};
+use controller::{category_controller, user_controller, auth_controller, http_controller};
+use utils::route_guard::auth_guard;
 
 #[tokio::main]
 async fn main() {
@@ -27,6 +29,8 @@ async fn main() {
 
     print!("Listening on {} ", listener.local_addr().unwrap());
 
+    let cors = CorsLayer::new().allow_origin(Any);
+
     let app_router = Router::new()
     .route("/", get(|| async { "Hello World" }))
     /* Category Route */
@@ -35,7 +39,7 @@ async fn main() {
     .route("/api/category/{id}", put(category_controller::update))
     .route("/api/category/{id}", delete(category_controller::delete))
     /* User Route */
-    .route("/api/user/search-paginate", post(user_controller::search_paginate))
+    .route("/api/user/search-paginate", post(user_controller::search_paginate)).route_layer(middleware::from_fn(auth_guard))
     .route("/api/user", post(user_controller::create))
     .route("/api/user/{id}", put(user_controller::update))
     .route("/api/user/{id}", delete(user_controller::delete))
@@ -43,6 +47,10 @@ async fn main() {
     .route("/api/auth/login", post(auth_controller::login))
     .route("/api/auth/authenticated", post(auth_controller::authenticated))
     .route("/api/auth/change-password", post(auth_controller::change_password))
+    /* Http Example Route */
+    .route("/api/http", get(http_controller::get_http_example))
+    .route("/api/http", post(http_controller::post_http_example))
+    .layer(cors)
     .with_state(db_pool);
 
     axum::serve(listener, app_router).await.expect("Error while serving the server.");
