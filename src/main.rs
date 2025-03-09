@@ -7,7 +7,7 @@ mod controller;
 mod model;
 mod utils;
 
-use controller::{category_controller, user_controller, auth_controller, http_controller};
+use controller::{auth_controller, category_controller, file_controller, http_controller, user_controller};
 use utils::route_guard::auth_guard;
 
 #[tokio::main]
@@ -50,6 +50,10 @@ async fn main() {
     /* Http Example Route */
     .route("/api/http", get(http_controller::get_http_example))
     .route("/api/http", post(http_controller::post_http_example))
+    /* Upload User File Route */
+    .route("/api/files/user", post(file_controller::upload_user_image))
+    .route("/api/files/user/image/{filename}", get(file_controller::get_user_image))
+    .route("/api/files/user/delete/{filename}", delete(file_controller::delete_user_image))
     .layer(cors)
     .with_state(db_pool);
 
