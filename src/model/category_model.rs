@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use sqlx::types::time::OffsetDateTime;
+use crate::model::utils_model::PaginationResponse;
 
 #[derive(Serialize)]
 pub struct CategoryData {
@@ -9,6 +10,12 @@ pub struct CategoryData {
 	pub created_at: OffsetDateTime,
 	#[serde(with = "time::serde::rfc3339")]
 	pub updated_at: OffsetDateTime
+}
+
+#[derive(Serialize)]
+pub struct CategoryPaginate {
+	pub data: Vec<CategoryData>,
+	pub paginate: PaginationResponse
 }
 
 #[derive(Deserialize)]

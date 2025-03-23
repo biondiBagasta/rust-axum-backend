@@ -28,17 +28,17 @@ pub async fn login(
 		body.username
 	).fetch_one(&pg_pool)
 	.await
-	.map_err(|e| {
+	.map_err(|_| {
 		(
-			StatusCode::INTERNAL_SERVER_ERROR,
-			json!({ "success": false, "message": e.to_string() }).to_string()
+			StatusCode::BAD_REQUEST,
+			json!({ "success": false, "message": "Data User Tidak Ditemukan" }).to_string()
 		)
 	})?;
 
 	let compared_password = verify(&body.password, &query_find_first.password);
 
 	if compared_password.unwrap() == false {
-		Ok(
+		Err(
 			(
 				StatusCode::UNAUTHORIZED,
 				json!({ "success": false, "message": "Data User Tidak Ditemukan." }).to_string()
@@ -78,33 +78,56 @@ pub async fn authenticated(
 			
 			if let Some(jwt_token) = header_value.strip_prefix("Bearer ") {
 
-		       let decoded = decode::<JwtClaims>(
-			        jwt_token,
-			        &DecodingKey::from_secret(JWT_SECRET.as_ref()),
-			        &Validation::default(),
-			    ).unwrap().claims;
+			    let now = SystemTime::now()
+		        .duration_since(UNIX_EPOCH)
+		        .unwrap()
+		        .as_secs();
 
-				Ok((
-					StatusCode::OK,
-					json!({ "status": true,  "data": decoded }).to_string()
-				))
+		        match decode::<JwtClaims>(
+		        	jwt_token, 
+		        	&DecodingKey::from_secret(JWT_SECRET.as_ref()), 
+		        	&Validation::default()
+		        ) {
+		            Ok(value) =>{
+		            	let jwt_claim = JwtClaims{
+		            		user_data: UserData {
+		            			password: String::from(""),
+		            			..value.claims.user_data.clone()
+		            		},
+		            		exp: (now + 36000000)as usize
+		            	};
+
+    	    			let jwt_token = encode(&Header::default(), &jwt_claim, &EncodingKey::from_secret(JWT_SECRET.as_ref()))
+						.expect("Failed to Create Token");
+
+						Ok((
+							StatusCode::OK,
+							json!({ "success": true,  "data": value.claims.user_data, "token": jwt_token }).to_string()
+						))
+		            },
+		            Err(_) => Err((
+						StatusCode::UNAUTHORIZED,
+						json!({ "success": false, "message": "Session Was Expired" }).to_string()
+					))
+		        }
+
 			} else {
-				Ok((
+				Err((
 					StatusCode::UNAUTHORIZED,
-					json!({ "status": false, "message": "Failed to Strip Bearer Prefix" }).to_string()
+					json!({ "success": false, "message": "Failed to Strip Bearer Prefix" }).to_string()
 				))
 			}
 
 		} else {
-			Ok((
+			Err((
 				StatusCode::UNAUTHORIZED,
-				json!({ "status": false, "message": "Invalid Credentials" }).to_string()
+				json!({ "success": false, "message": "Invalid Credentials" }).to_string()
 			))
 		}
 	} else {
-		Ok((
+		Err((
 			StatusCode::UNAUTHORIZED,
-			json!({ "status": false, "message": "Invalid Credentials" }).to_string()
+			json!({ "success": false, "message": "Invalid Credentials" }).to_string()
 		))
 	}
 }
@@ -153,7 +176,7 @@ pub async fn change_password(
 			        )
 		        )
 	    	} else {
-	    		Ok(
+	    		Err(
 	    			(
 			            StatusCode::FORBIDDEN,
 			            json!({ "success": false, "message": "Password Lama Salah." }).to_string()

@@ -6,6 +6,7 @@ use axum:: {
 };
 
 use jsonwebtoken::{ decode, DecodingKey, Validation };
+use serde_json::json;
 use crate::model::user_model::JwtClaims;
 use crate::utils::utils::JWT_SECRET;
 
@@ -25,25 +26,25 @@ pub async fn auth_guard(req: Request<Body>, next: Next) -> Result<Response, (Sta
 					Ok(_) => Ok(next.run(req).await),
 					Err(e) => Err((
 						StatusCode::UNAUTHORIZED,
-						e.to_string()
+						json!({ "success": false, "message": e.to_string() }).to_string()
 					))
 				}
 			} else {
 				Err((
 					StatusCode::UNAUTHORIZED,
-					"You aren't authorized.".to_string()
+					json!({ "success": false, "message": "Invalid Credentials" }).to_string()
 				))	
 			}
 		} else {
 			Err((
 				StatusCode::UNAUTHORIZED,
-				"You aren't authorized.".to_string()
-			))
+				json!({ "success": false, "message": "Invalid Credentials" }).to_string()
+			))	
 		}
 	} else {
 		Err((
 			StatusCode::UNAUTHORIZED,
-			"You aren't authorized.".to_string()
-		))
+			json!({ "success": false, "message": "Invalid Credentials" }).to_string()
+		))	
 	}
 }

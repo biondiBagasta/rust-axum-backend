@@ -34,19 +34,34 @@ async fn main() {
     let app_router = Router::new()
     .route("/", get(|| async { "Hello World" }))
     /* Category Route */
+    .route("/api/category/search-paginate", post(category_controller::search_paginate))
+    .route_layer(middleware::from_fn(auth_guard))
     .route("/api/category", get(category_controller::find_many))
+    .route_layer(middleware::from_fn(auth_guard))
     .route("/api/category", post(category_controller::create))
+    .route_layer(middleware::from_fn(auth_guard))
     .route("/api/category/{id}", put(category_controller::update))
+    .route_layer(middleware::from_fn(auth_guard))
     .route("/api/category/{id}", delete(category_controller::delete))
+    .route_layer(middleware::from_fn(auth_guard))
+
     /* User Route */
-    .route("/api/user/search-paginate", post(user_controller::search_paginate)).route_layer(middleware::from_fn(auth_guard))
+    .route("/api/user/search-paginate", post(user_controller::search_paginate))
+    .route_layer(middleware::from_fn(auth_guard))
     .route("/api/user", post(user_controller::create))
+    .route_layer(middleware::from_fn(auth_guard))
     .route("/api/user/{id}", put(user_controller::update))
+    .route_layer(middleware::from_fn(auth_guard))
     .route("/api/user/{id}", delete(user_controller::delete))
+    .route_layer(middleware::from_fn(auth_guard))
+
     /* Auth Route */
     .route("/api/auth/login", post(auth_controller::login))
     .route("/api/auth/authenticated", post(auth_controller::authenticated))
+    .route_layer(middleware::from_fn(auth_guard))
     .route("/api/auth/change-password", post(auth_controller::change_password))
+    .route_layer(middleware::from_fn(auth_guard))
+    
     /* Http Example Route */
     .route("/api/http", get(http_controller::get_http_example))
     .route("/api/http", post(http_controller::post_http_example))
